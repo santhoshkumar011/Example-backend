@@ -1,56 +1,44 @@
 import express from "express";
-import cors from "cors";
+import pg from "pg";
 import dotenv from "dotenv";
-import pool from "./db.js";
+import cors from "cors";
 
-dotenv.config();
+dotenv.config(); // Load environment variables
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3000;
 
-// Middleware
-app.use(express.json());
+// PostgreSQL Connection Setup
+const { Pool } = pg;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL, // Use Render's database
+  ssl: {
+    rejectUnauthorized: false, // Required for Render’s managed PostgreSQL
+  },
+});
+
 app.use(cors());
+app.use(express.json());
 
-// Create table if not exists
-const createTable = async () => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        phone VARCHAR(15) NOT NULL
-      );
-    `);
-    console.log("Users table is ready");
-  } catch (error) {
-    console.error("Error creating table:", error);
-  }
-};
-createTable();
+// API Routes
+app.get("/", (req, res) => {
+  res.send("API is running...");
+});
 
-// Route to handle form submission
 app.post("/submit", async (req, res) => {
   const { name, email, phone } = req.body;
   try {
-    await pool.query("INSERT INTO users (name, email, phone) VALUES ($1, $2, $3)", [name, email, phone]);
-    res.json({ message: "User data saved successfully!" });
+    const result = await pool.query(
+      "INSERT INTO users (name, email, phone) VALUES ($1, $2, $3) RETURNING *",
+      [name, email, phone]
+    );
+    res.status(201).json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ message: "Database error", error: err.message });
-  }
-});
-
-// Route to get all users
-app.get("/users", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM users");
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ message: "Database error", error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Database error" });
   }
 });
 
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server running on port ${port}`);
 });
