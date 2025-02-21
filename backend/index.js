@@ -11,7 +11,7 @@ const port = process.env.PORT || 3000;
 // PostgreSQL Connection Setup
 const { Pool } = pg;
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Use Render's database
+  connectionString: "postgresql://postgres_wbe9_user:qs5MrhsNQVjsvsF1VS4g0mXVWpMonX7V@dpg-curkk2tds78s73ekigjg-a/postgres_wbe9", // Use Render's database
   ssl: {
     rejectUnauthorized: false, // Required for Render’s managed PostgreSQL
   },
