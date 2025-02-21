@@ -25,6 +25,17 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
+app.get("/users", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM users");
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+
 app.post("/submit", async (req, res) => {
   const { name, email, phone } = req.body;
   try {
